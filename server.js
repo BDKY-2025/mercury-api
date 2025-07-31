@@ -1,31 +1,35 @@
 const express = require('express');
-const Mercury = require('@postlight/mercury-parser');
+const puppeteer = require('puppeteer');
+const { JSDOM } = require('jsdom');
+const { Readability } = require('@mozilla/readability');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(express.json());
 
-app.post('/parse', async (req, res) => {
+app.post('/scrape', async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'Missing URL' });
 
-  try {
-    const result = await Mercury.parse(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      }
-    });
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
 
-    res.json({
-      title: result.title,
-      text: result.textContent
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to parse', details: err.message });
-  }
+  const page = await browser.newPage();
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+  const html = await page.content();
+  const dom = new JSDOM(html, { url });
+  const reader = new Readability(dom.window.document);
+  const article = reader.parse();
+
+  await browser.close();
+
+  res.json({
+    title: article.title,
+    content: article.textContent
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
