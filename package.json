@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "puppeteer install"
+    "postinstall": "PUPPETEER_DOWNLOAD_HOST=https://storage.googleapis.com PUPPETEER_PRODUCT=chrome PUPPETEER_LOGLEVEL=info puppeteer install"
   },
   "engines": {
     "node": "20.x"
