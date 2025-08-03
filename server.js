@@ -1,15 +1,17 @@
-// Imports and Setup
+// === Imports ===
 const express = require("express");
 const puppeteer = require("puppeteer");
 const { Readability } = require("@mozilla/readability");
 const { JSDOM } = require("jsdom");
+const path = require("path");
 
+// === Express Setup ===
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Endpoint: POST /scrape
+// === Scrape Endpoint ===
 app.post("/scrape", async (req, res) => {
   const { url } = req.body;
   if (!url) {
@@ -17,18 +19,50 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    // Launch Puppeteer
+    // === Launch Puppeteer (with hardcoded path) ===
+    const chromePath = path.join(
+      __dirname,
+      "chromium",
+      "chrome",
+      "linux-138.0.7204.168",
+      "chrome-linux64",
+      "chrome"
+    );
+
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: "/opt/render/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome",
+      executablePath: chromePath,
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
-    // Navigate and Scrape
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
 
-    // Extract Content
+    // === Set Headers ===
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    );
+    await page.setExtraHTTPHeaders({
+      "accept-language": "en-US,en;q=0.9"
+    });
+
+    // === Block Fonts and Images ===
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const type = req.resourceType();
+      if (type === "image" || type === "font") {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    // === Navigate to URL ===
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000
+    });
+
+    // === Readability ===
     const html = await page.content();
     const dom = new JSDOM(html, { url });
     const reader = new Readability(dom.window.document);
@@ -40,7 +74,7 @@ app.post("/scrape", async (req, res) => {
       return res.status(500).json({ error: "Could not extract article" });
     }
 
-    // Respond with Parsed Content
+    // === Return Clean Article ===
     res.json({
       title: article.title,
       content: article.textContent
@@ -52,7 +86,7 @@ app.post("/scrape", async (req, res) => {
   }
 });
 
-// Start Server
+// === Start Server ===
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
