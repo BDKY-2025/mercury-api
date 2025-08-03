@@ -45,10 +45,10 @@ app.post("/scrape", async (req, res) => {
       "accept-language": "en-US,en;q=0.9"
     });
 
-    // === Navigate to Target URL ===
+    // === Navigate to Target URL (extended timeout) ===
     await page.goto(url, {
-      waitUntil: "networkidle2",
-      timeout: 30000
+      waitUntil: "domcontentloaded",
+      timeout: 60000 // increase timeout to 60 seconds
     });
 
     // === Extract HTML and Parse with Readability ===
