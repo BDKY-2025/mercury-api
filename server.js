@@ -17,9 +17,10 @@ app.post("/scrape", async (req, res) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: puppeteer.executablePath(),
+      executablePath: puppeteer.executablePath(), // Uses the local install in ./chromium
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
+
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
 
