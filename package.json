@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "echo 'Running postinstall'; npx puppeteer browsers install chrome"
+    "postinstall": "echo 'Running postinstall'; npx puppeteer browsers install chrome || echo 'Postinstall failed'"
   },
   "engines": {
     "node": "20.x"
