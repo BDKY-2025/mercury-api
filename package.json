@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "PUPPETEER_LOGLEVEL=info puppeteer install"
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "engines": {
     "node": "20.x"
