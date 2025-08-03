@@ -2,6 +2,7 @@ const express = require("express");
 const puppeteer = require("puppeteer");
 const { Readability } = require("@mozilla/readability");
 const { JSDOM } = require("jsdom");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,9 +16,18 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
+    const chromePath = path.join(
+      __dirname,
+      "chromium",
+      "chrome",
+      "linux-138.0.7204.168",
+      "chrome-linux64",
+      "chrome"
+    );
+
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: puppeteer.executablePath(), // Uses the local install in ./chromium
+      executablePath: chromePath,
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
